@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zoya Developments — Fleet & Driver Management</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4EAE0; --border:#E3D2BF;
+  --text:#3A2A1E; --text-dim:#8C7362; --accent:#6F4E37; --accent-ink:#FFFFFF;
+  --good:#4F7942; --good-bg:#EAF1E3; --warn:#B5860B; --warn-bg:#FBF1D9; --danger:#A6433D; --danger-bg:#F8E4E2;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#241812; --surface:#33241B; --surface-2:#402D22; --border:#513A2B;
+    --text:#F3E8DC; --text-dim:#C7AF9C; --accent:#D3A868; --accent-ink:#241812;
+    --good:#8FBF77; --good-bg:#2C3A22; --warn:#E0AC4D; --warn-bg:#3C2E14; --danger:#E08078; --danger-bg:#3E211D;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#241812; --surface:#33241B; --surface-2:#402D22; --border:#513A2B;
+  --text:#F3E8DC; --text-dim:#C7AF9C; --accent:#D3A868; --accent-ink:#241812;
+  --good:#8FBF77; --good-bg:#2C3A22; --warn:#E0AC4D; --warn-bg:#3C2E14; --danger:#E08078; --danger-bg:#3E211D;
+}
+:root[data-theme="light"]{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4EAE0; --border:#E3D2BF;
+  --text:#3A2A1E; --text-dim:#8C7362; --accent:#6F4E37; --accent-ink:#FFFFFF;
+  --good:#4F7942; --good-bg:#EAF1E3; --warn:#B5860B; --warn-bg:#FBF1D9; --danger:#A6433D; --danger-bg:#F8E4E2;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100%;
+}
+button, input, select, textarea{ font-family:inherit; font-size:16px; color:var(--text); }
+button{ cursor:pointer; }
+a{ color:var(--accent); }
+#app{ display:flex; flex-direction:column; min-height:100vh; }
+
+.header{
+  position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.brand{ display:flex; flex-direction:column; line-height:1.15; }
+.brand .name{ font-weight:800; font-size:17px; letter-spacing:.2px; }
+.brand .tag{ font-size:12px; color:var(--text-dim); }
+.who{ display:flex; align-items:center; gap:8px; }
+.who .badge{ font-size:11px; padding:3px 8px; border-radius:20px; background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim); }
+.who .uname{ font-weight:600; font-size:14px; }
+.iconbtn{ background:none; border:1px solid var(--border); color:var(--text-dim); border-radius:10px; padding:7px 10px; font-size:13px; }
+.iconbtn:active{ background:var(--surface-2); }
+
+.main{ flex:1; padding:14px 14px 90px; max-width:640px; margin:0 auto; width:100%; }
+
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; }
+.card h3{ margin:0 0 8px; font-size:15px; font-weight:700; }
+.muted{ color:var(--text-dim); font-size:13px; }
+.row{ display:flex; gap:8px; align-items:center; }
+.row.wrap{ flex-wrap:wrap; }
+.between{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; background:var(--accent); color:var(--accent-ink); border:none; border-radius:11px; padding:11px 16px; font-weight:700; font-size:14.5px; width:100%; }
+.btn:active{ opacity:.85; }
+.btn.secondary{ background:var(--surface-2); color:var(--text); border:1px solid var(--border); }
+.btn.danger{ background:var(--danger); color:#fff; }
+.btn.small{ width:auto; padding:8px 12px; font-size:13px; }
+.btn.block{ width:100%; }
+.btn:disabled{ opacity:.45; }
+
+.field{ margin-bottom:10px; }
+.field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:5px; font-weight:600; }
+.field input, .field select, .field textarea{
+  width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+  border-radius:10px; padding:10px 11px;
+}
+.field textarea{ resize:vertical; min-height:60px; }
+.checkline{ display:flex; align-items:center; gap:9px; padding:9px 0; border-bottom:1px solid var(--border); }
+.checkline:last-child{ border-bottom:none; }
+.checkline input[type=checkbox]{ width:19px; height:19px; }
+
+.pill{ display:inline-flex; align-items:center; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.pill.ok{ background:var(--good-bg); color:var(--good); }
+.pill.warn{ background:var(--warn-bg); color:var(--warn); }
+.pill.danger{ background:var(--danger-bg); color:var(--danger); }
+.pill.neutral{ background:var(--surface-2); color:var(--text-dim); }
+
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:var(--surface); border-top:1px solid var(--border);
+  display:flex; overflow-x:auto;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.tabbtn{ flex:1; min-width:64px; background:none; border:none; padding:9px 4px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-dim); font-size:11px; font-weight:600; }
+.tabbtn.active{ color:var(--accent); }
+.tabbtn .dot{ width:6px; height:6px; border-radius:50%; background:var(--danger); position:absolute; margin-left:14px; margin-top:-2px; }
+
+.notecard{ border-left:4px solid var(--accent); }
+.notecard.urgent{ border-left-color:var(--danger); background:var(--danger-bg); }
+
+.carcard{ display:flex; flex-direction:column; gap:6px; }
+.carcard .top{ display:flex; justify-content:space-between; align-items:flex-start; }
+.expirybar{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+
+.photogrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+.photoslot{ border:1.5px dashed var(--border); border-radius:10px; padding:10px; text-align:center; position:relative; min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+.photoslot img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:9px; }
+.photoslot span{ font-size:12px; color:var(--text-dim); z-index:1; }
+.photoslot input{ position:absolute; inset:0; opacity:0; width:100%; height:100%; }
+.photoslot.done span{ color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6); z-index:2; }
+
+.chatwrap{ display:flex; flex-direction:column; height:calc(100vh - 230px); min-height:340px; }
+.chatlog{ flex:1; overflow-y:auto; padding:6px 2px; display:flex; flex-direction:column; gap:8px; }
+.bubble{ max-width:80%; padding:9px 12px; border-radius:14px; font-size:14px; line-height:1.35; }
+.bubble.me{ align-self:flex-end; background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:4px; }
+.bubble.them{ align-self:flex-start; background:var(--surface-2); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.bubble .meta{ font-size:10.5px; opacity:.7; margin-bottom:2px; font-weight:700; }
+.chatinput{ display:flex; gap:8px; padding-top:8px; border-top:1px solid var(--border); }
+.chatinput input{ flex:1; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:20px; padding:11px 15px; }
+.chatinput button{ background:var(--accent); color:var(--accent-ink); border:none; border-radius:20px; padding:0 18px; font-weight:700; }
+
+.loginwrap{ max-width:420px; margin:10vh auto 0; padding:0 20px; text-align:center; }
+.loginwrap h1{ font-size:22px; margin:14px 0 2px; }
+.loginwrap p{ color:var(--text-dim); font-size:14px; margin-top:0; }
+.roletile{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px; margin-top:14px; text-align:left; }
+.roletile h3{ margin:0 0 4px; }
+.namebtn{ display:block; width:100%; text-align:left; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:12px 14px; margin-bottom:8px; font-weight:600; }
+.namebtn:active{ background:var(--border); }
+.pinpad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:260px; margin:16px auto 0; }
+.pinpad button{ aspect-ratio:1; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); font-size:20px; font-weight:700; color:var(--text); }
+.pindots{ display:flex; gap:10px; justify-content:center; margin:14px 0; }
+.pindots span{ width:13px; height:13px; border-radius:50%; border:1.5px solid var(--text-dim); }
+.pindots span.filled{ background:var(--accent); border-color:var(--accent); }
+
+.empty{ text-align:center; padding:30px 10px; color:var(--text-dim); }
+.divider{ height:1px; background:var(--border); margin:12px 0; }
+.taskstatus-pending{color:var(--warn)} .taskstatus-done{color:var(--accent)} .taskstatus-approved{color:var(--good)} .taskstatus-rejected{color:var(--danger)}
+.linklike{ background:none; border:none; color:var(--accent); font-weight:700; padding:6px 0; font-size:13.5px; }
+::placeholder{ color:var(--text-dim); opacity:.8; }
+.sectiontitle{ font-size:13px; font-weight:800; text-transform:none; color:var(--text-dim); margin:18px 0 8px; }
+img.thumb{ width:100%; border-radius:10px; border:1px solid var(--border); display:block; }
+.thumbgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:6px; }
+.reportgrid{ display:grid; grid-template-columns:1.5fr .8fr .8fr .8fr; gap:4px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; align-items:center; }
+.hoursgrid{ display:grid; grid-template-columns:1.6fr 1fr 1fr; gap:4px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; align-items:center; }
+.hoursgrid:last-child{ border-bottom:none; }
+.hoursgrid.head{ color:var(--text-dim); font-weight:800; font-size:11px; }
+.hoursgrid span:not(:first-child){ text-align:right; }
+.reportgrid:last-child{ border-bottom:none; }
+.reportgrid.head{ color:var(--text-dim); font-weight:800; font-size:11px; }
+.reportgrid span:not(:first-child){ text-align:right; }
+.reporttabs{ display:flex; gap:6px; margin-bottom:10px; }
+.reporttabs button{ flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:8px 4px; font-size:12.5px; font-weight:700; color:var(--text-dim); }
+.reporttabs button.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+</style>
+</head>
+<body>
+<div id="app"><div class="empty">Loading fleet log…</div></div>
+<script>
+(function(){
+"use strict";
+
+var db=null;
+var state={ cars:{}, drivers:{}, bosses:{}, hrs:{}, accounts:{}, sessions:{}, expenses:{}, fines:{}, tasks:{}, notes:{}, chat:{}, duty:{}, presence:{}, ready:false, dbAvailable:null };
+var me=null; // {role:'driver'|'boss'|'hr'|'account', id, name}
+var tab='home';
+var loginStage='root'; // root | driverPick | driverPin | bossPick | bossNew | hrPick | hrNew | accountPick | accountNew
+var pickedDriver=null; var pinBuf='';
+var pendingCheckoutCar=null;
+var checkoutForm={km:'', tyres:true, lights:true, fuel:'Full', service:false, damage:false, damageNote:''};
+var checkinForm={km:'', tyres:true, lights:true, service:false, damage:false, damageNote:''};
+var CAR_ORDER=['car1','car2','car3','car4','car5','car6','car7','car8'];
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return (s===undefined||s===null?'':String(s)).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function nowIso(){ return new Date().toISOString(); }
+function fmtTime(iso){ if(!iso) return ''; var d=new Date(iso); return d.toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function fmtDateOnly(iso){ if(!iso) return ''; return new Date(iso+'T00:00:00').toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); }
+function hoursSince(iso){ if(!iso) return 0; return (Date.now()-new Date(iso).getTime())/3600000; }
+function isToday(dateStr){ return dateStr===todayStr(); }
+function inLastDays(dateStr, days){
+  if(!dateStr) return false;
+  var d=new Date(dateStr+'T00:00:00');
+  var now=new Date(new Date().toDateString());
+  var diff=Math.floor((now-d)/86400000);
+  return diff>=0 && diff<days;
+}
+function isThisMonth(dateStr){
+  if(!dateStr) return false;
+  var d=new Date(dateStr+'T00:00:00');
+  var now=new Date();
+  return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();
+}
+function monthLabel(){ return new Date().toLocaleDateString(undefined,{month:'long', year:'numeric'}); }
+function buildExpenseReport(){
+  var cars=carsSorted();
+  var rep={ today:{total:0, byCar:{}}, week:{total:0, byCar:{}}, month:{total:0, byCar:{}} };
+  cars.forEach(function(c){ rep.today.byCar[c.id]=0; rep.week.byCar[c.id]=0; rep.month.byCar[c.id]=0; });
+  listOf(state.expenses).forEach(function(e){
+    var amt=e.amount||0;
+    if(isToday(e.date)){ rep.today.total+=amt; if(e.carId in rep.today.byCar) rep.today.byCar[e.carId]+=amt; }
+    if(inLastDays(e.date,7)){ rep.week.total+=amt; if(e.carId in rep.week.byCar) rep.week.byCar[e.carId]+=amt; }
+    if(isThisMonth(e.date)){ rep.month.total+=amt; if(e.carId in rep.month.byCar) rep.month.byCar[e.carId]+=amt; }
+  });
+  return rep;
+}
+var reportPeriod='today';
+
+function sessionHours(s){
+  var start=new Date(s.outTime).getTime();
+  var end=s.inTime?new Date(s.inTime).getTime():Date.now();
+  return Math.max(0, (end-start)/3600000);
+}
+var DAILY_HOUR_LIMIT=9;
+function driverDayHours(driverId, dateStr){
+  var total=0;
+  listOf(state.sessions).forEach(function(s){ if(s.driverId===driverId && s.date===dateStr) total+=sessionHours(s); });
+  return total;
+}
+function buildHoursReport(){
+  var byDriverDate={};
+  listOf(state.sessions).forEach(function(s){
+    var key=s.driverId+'|'+s.date;
+    byDriverDate[key]=(byDriverDate[key]||0)+sessionHours(s);
+  });
+  var rep={};
+  activeDrivers().forEach(function(d){ rep[d.id]={name:d.name, todayHours:0, todayOT:0, weekHours:0, weekOT:0, monthHours:0, monthOT:0}; });
+  Object.keys(byDriverDate).forEach(function(key){
+    var idx=key.indexOf('|');
+    var driverId=key.slice(0,idx), date=key.slice(idx+1);
+    if(!rep[driverId]) return;
+    var hrs=byDriverDate[key];
+    var ot=Math.max(0, hrs-DAILY_HOUR_LIMIT);
+    if(isToday(date)){ rep[driverId].todayHours+=hrs; rep[driverId].todayOT+=ot; }
+    if(inLastDays(date,7)){ rep[driverId].weekHours+=hrs; rep[driverId].weekOT+=ot; }
+    if(isThisMonth(date)){ rep[driverId].monthHours+=hrs; rep[driverId].monthOT+=ot; }
+  });
+  return rep;
+}
+var hoursPeriod='today';
+
+// ---- Duty login/logout (standard shift 10:00 AM - 7:00 PM) ----
+var DUTY_START_LABEL='10:00 AM', DUTY_END_LABEL='7:00 PM';
+function myOpenDuty(){
+  if(!me) return null;
+  return listOf(state.duty).find(function(s){ return s.driverId===me.id && s.status==='open'; });
+}
+function dutySessionHours(s){
+  var start=new Date(s.inTime).getTime();
+  var end=s.outTime?new Date(s.outTime).getTime():Date.now();
+  return Math.max(0, (end-start)/3600000);
+}
+function driverDayDutyHours(driverId, dateStr){
+  var total=0;
+  listOf(state.duty).forEach(function(s){ if(s.driverId===driverId && s.date===dateStr) total+=dutySessionHours(s); });
+  return total;
+}
+function buildDutyReport(){
+  var byDriverDate={};
+  listOf(state.duty).forEach(function(s){
+    var key=s.driverId+'|'+s.date;
+    byDriverDate[key]=(byDriverDate[key]||0)+dutySessionHours(s);
+  });
+  var rep={};
+  activeDrivers().forEach(function(d){ rep[d.id]={name:d.name, todayHours:0, todayOT:0, weekHours:0, weekOT:0, monthHours:0, monthOT:0, status:'off', inTime:null, outTime:null}; });
+  Object.keys(byDriverDate).forEach(function(key){
+    var idx=key.indexOf('|');
+    var driverId=key.slice(0,idx), date=key.slice(idx+1);
+    if(!rep[driverId]) return;
+    var hrs=byDriverDate[key];
+    var ot=Math.max(0, hrs-DAILY_HOUR_LIMIT);
+    if(isToday(date)){ rep[driverId].todayHours+=hrs; rep[driverId].todayOT+=ot; }
+    if(inLastDays(date,7)){ rep[driverId].weekHours+=hrs; rep[driverId].weekOT+=ot; }
+    if(isThisMonth(date)){ rep[driverId].monthHours+=hrs; rep[driverId].monthOT+=ot; }
+  });
+  listOf(state.duty).filter(function(s){return isToday(s.date);}).sort(function(a,b){return new Date(a.inTime)-new Date(b.inTime);}).forEach(function(s){
+    if(!rep[s.driverId]) return;
+    rep[s.driverId].inTime=s.inTime;
+    rep[s.driverId].outTime=s.outTime;
+    rep[s.driverId].status = s.status==='open' ? 'on' : 'off';
+  });
+  return rep;
+}
+
+function saveLocalUser(u){ try{ localStorage.setItem('zpt_user', JSON.stringify(u)); }catch(e){} }
+function loadLocalUser(){ try{ var s=localStorage.getItem('zpt_user'); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function clearLocalUser(){ try{ localStorage.removeItem('zpt_user'); }catch(e){} }
+
+function expiryInfo(dateStr){
+  if(!dateStr) return {cls:'neutral', label:'Not set'};
+  var days=Math.ceil((new Date(dateStr+'T00:00:00')-new Date(new Date().toDateString()))/86400000);
+  if(days<0) return {cls:'danger', label:'Expired '+Math.abs(days)+'d ago'};
+  if(days<=7) return {cls:'danger', label:days+'d left'};
+  if(days<=30) return {cls:'warn', label:days+'d left'};
+  return {cls:'ok', label:days+'d left'};
+}
+
+function listOf(map){ return Object.keys(map).map(function(k){ return map[k]; }); }
+function activeDrivers(){ return listOf(state.drivers).filter(function(d){return d.active!==false;}); }
+function activeBosses(){ return listOf(state.bosses).filter(function(b){return b.active!==false;}); }
+function activeHrs(){ return listOf(state.hrs).filter(function(b){return b.active!==false;}); }
+function activeAccounts(){ return listOf(state.accounts).filter(function(b){return b.active!==false;}); }
+function carsSorted(){ return CAR_ORDER.map(function(id){ return state.cars[id]; }).filter(Boolean); }
+
+// ---------- Firebase bootstrap ----------
+var firebaseConfig={
+  apiKey:"AIzaSyCw1eAR-boorV-4kOd4l37kzpAXmDAEFnw",
+  authDomain:"zoya-fleet.firebaseapp.com",
+  projectId:"zoya-fleet",
+  storageBucket:"zoya-fleet.firebasestorage.app",
+  messagingSenderId:"1027237798557",
+  appId:"1:1027237798557:web:a478cda54d28d617c7aa74"
+};
+
+async function initApp(){
+  me=loadLocalUser();
+  render();
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+  }catch(e){ console.error(e); state.dbAvailable=false; render(); return; }
+  state.dbAvailable=true;
+  subscribeAll();
+  startHeartbeat();
+}
+
+function heartbeat(){
+  if(!me || !db) return;
+  db.collection('presence').doc(me.role+'_'+me.id).set({userId:me.id, name:me.name, role:me.role, lastSeen:nowIso()}, {merge:true}).catch(function(e){ console.error(e); });
+}
+function startHeartbeat(){
+  heartbeat();
+  setInterval(heartbeat, 30000);
+}
+function isOnline(lastSeen){
+  if(!lastSeen) return false;
+  return (Date.now()-new Date(lastSeen).getTime()) < 90000;
+}
+function roleLabel(role){ return {driver:'Driver', boss:'Boss', hr:'HR', account:'Accounts'}[role] || role; }
+function allTeamMembers(){
+  var list=[];
+  activeDrivers().forEach(function(d){ list.push({id:d.id, name:d.name, role:'driver'}); });
+  activeBosses().forEach(function(d){ list.push({id:d.id, name:d.name, role:'boss'}); });
+  activeHrs().forEach(function(d){ list.push({id:d.id, name:d.name, role:'hr'}); });
+  activeAccounts().forEach(function(d){ list.push({id:d.id, name:d.name, role:'account'}); });
+  return list;
+}
+
+function sub(name, target){
+  try{
+    db.collection(name).onSnapshot(function(snap){
+      var m={};
+      snap.docs.forEach(function(d){ if(d.exists) m[d.id]=Object.assign({id:d.id}, d.data()); });
+      state[target]=m;
+      if(name==='cars') ensureSeedCars();
+      state.ready=true;
+      render();
+    }, function(err){ console.error(name, err); });
+  }catch(e){ console.error(e); }
+}
+
+var seeded=false;
+async function ensureSeedCars(){
+  if(seeded) return;
+  if(Object.keys(state.cars).length>0) { seeded=true; return; }
+  seeded=true;
+  try{
+    for(var i=0;i<CAR_ORDER.length;i++){
+      var id=CAR_ORDER[i];
+      var existing=await db.collection('cars').doc(id).get();
+      if(existing.exists) continue;
+      await db.collection('cars').doc(id).set({
+        name:'Car '+(i+1), plate:'', model:'', regExpiry:'', insExpiry:'', passingExpiry:'',
+        status:'in', currentDriverId:null, currentDriverName:null, currentKm:0, lastCleanedDate:''
+      });
+    }
+  }catch(e){ console.error('seed cars failed', e); }
+}
+
+function subscribeAll(){
+  sub('cars','cars');
+  sub('drivers','drivers');
+  sub('bosses','bosses');
+  sub('hrs','hrs');
+  sub('accounts','accounts');
+  sub('sessions','sessions');
+  sub('expenses','expenses');
+  sub('fines','fines');
+  sub('tasks','tasks');
+  sub('notes','notes');
+  sub('chat','chat');
+  sub('duty','duty');
+  sub('presence','presence');
+}
+
+// ---------- actions ----------
+window.act={};
+act.setReportPeriod=function(p){ reportPeriod=p; render(); };
+act.setHoursPeriod=function(p){ hoursPeriod=p; render(); };
+
+act.setTab=function(t){ tab=t; render(); setTimeout(scrollChatBottom,50); };
+
+act.startDuty=async function(){
+  if(myOpenDuty()) return;
+  await db.collection('duty').add({driverId:me.id, driverName:me.name, date:todayStr(), inTime:nowIso(), outTime:null, status:'open'});
+};
+act.endDuty=async function(){
+  var s=myOpenDuty();
+  if(!s) return;
+  await db.collection('duty').doc(s.id).update({outTime:nowIso(), status:'closed'});
+};
+act.logout=function(){ me=null; clearLocalUser(); loginStage='root'; pickedDriver=null; pinBuf=''; render(); };
+
+act.goDriverPick=function(){ loginStage='driverPick'; render(); };
+act.goBossPick=function(){ loginStage='bossPick'; render(); };
+act.goHrPick=function(){ loginStage='hrPick'; render(); };
+act.goAccountPick=function(){ loginStage='accountPick'; render(); };
+act.goRoot=function(){ loginStage='root'; render(); };
+
+act.pickDriver=function(id){ pickedDriver=state.drivers[id]; pinBuf=''; loginStage='driverPin'; render(); };
+act.pinDigit=function(d){
+  if(pinBuf.length>=4) return;
+  pinBuf+=d;
+  render();
+  if(pinBuf.length===4){
+    setTimeout(function(){
+      if(pinBuf===String(pickedDriver.pin||'')){
+        me={role:'driver', id:pickedDriver.id, name:pickedDriver.name};
+        saveLocalUser(me); heartbeat();
+        loginStage='root'; tab='home';
+        render();
+      } else {
+        alert('Wrong PIN. Try again.');
+        pinBuf='';
+        render();
+      }
+    },150);
+  }
+};
+act.pinBack=function(){ pinBuf=pinBuf.slice(0,-1); render(); };
+
+act.pickBoss=function(id){
+  var b=state.bosses[id];
+  me={role:'boss', id:b.id, name:b.name};
+  saveLocalUser(me); heartbeat();
+  loginStage='root'; tab='home';
+  render();
+};
+act.showBossNew=function(){ loginStage='bossNew'; render(); };
+act.createBoss=async function(ev){
+  ev.preventDefault();
+  var name=$('bossNameInput').value.trim();
+  if(!name) return;
+  try{
+    var ref=await db.collection('bosses').add({name:name, active:true, createdAt:nowIso()});
+    me={role:'boss', id:ref.id, name:name};
+    saveLocalUser(me); heartbeat();
+    loginStage='root'; tab='home';
+    render();
+  }catch(e){ alert('Save failed, please try again.'); }
+  return false;
+};
+
+act.pickHr=function(id){
+  var b=state.hrs[id];
+  me={role:'hr', id:b.id, name:b.name};
+  saveLocalUser(me); heartbeat();
+  loginStage='root'; tab='home';
+  render();
+};
+act.showHrNew=function(){ loginStage='hrNew'; render(); };
+act.createHr=async function(ev){
+  ev.preventDefault();
+  var name=$('hrNameInput').value.trim();
+  if(!name) return false;
+  try{
+    var ref=await db.collection('hrs').add({name:name, active:true, createdAt:nowIso()});
+    me={role:'hr', id:ref.id, name:name};
+    saveLocalUser(me); heartbeat();
+    loginStage='root'; tab='home';
+    render();
+  }catch(e){ alert('Save failed, please try again.'); }
+  return false;
+};
+
+act.pickAccount=function(id){
+  var b=state.accounts[id];
+  me={role:'account', id:b.id, name:b.name};
+  saveLocalUser(me); heartbeat();
+  loginStage='root'; tab='home';
+  render();
+};
+act.showAccountNew=function(){ loginStage='accountNew'; render(); };
+act.createAccount=async function(ev){
+  ev.preventDefault();
+  var name=$('accountNameInput').value.trim();
+  if(!name) return false;
+  try{
+    var ref=await db.collection('accounts').add({name:name, active:true, createdAt:nowIso()});
+    me={role:'account', id:ref.id, name:name};
+    saveLocalUser(me); heartbeat();
+    loginStage='root'; tab='home';
+    render();
+  }catch(e){ alert('Save failed, please try again.'); }
+  return false;
+};
+
+// ---- notes ----
+act.addNote=async function(ev){
+  ev.preventDefault();
+  var text=$('noteText').value.trim();
+  var urgent=$('noteUrgent').checked;
+  if(!text) return;
+  await db.collection('notes').add({text:text, urgent:urgent, createdById:me.id, createdByName:me.name, createdAt:nowIso(), acknowledgedBy:[]});
+  $('noteText').value='';
+  render();
+  return false;
+};
+act.ackNote=async function(id){
+  var n=state.notes[id]; if(!n) return;
+  var arr=(n.acknowledgedBy||[]).slice();
+  if(arr.indexOf(me.id)===-1) arr.push(me.id);
+  await db.collection('notes').doc(id).update({acknowledgedBy:arr});
+};
+act.deleteNote=async function(id){
+  if(!confirm('Delete this note?')) return;
+  await db.collection('notes').doc(id).delete();
+};
+
+// ---- cars (boss edit) ----
+act.saveCar=async function(id){
+  var name=$('car_name_'+id).value.trim();
+  var plate=$('car_plate_'+id).value.trim();
+  var model=$('car_model_'+id).value.trim();
+  var reg=$('car_reg_'+id).value;
+  var ins=$('car_ins_'+id).value;
+  var pass=$('car_pass_'+id).value;
+  await db.collection('cars').doc(id).update({name:name||('Car'), plate:plate, model:model, regExpiry:reg, insExpiry:ins, passingExpiry:pass});
+  var btn=$('carsave_'+id); if(btn){ btn.textContent='Saved ✓'; setTimeout(function(){ if(btn) btn.textContent='Save'; },1400); }
+};
+
+// ---- driver/boss team management ----
+act.runQuickSetup=async function(){
+  if(!confirm('This will fill in the Zoya Developments cars, drivers, bosses, HR and accounts. Continue?')) return;
+  var btn=$('quickSetupBtn'); if(btn){ btn.disabled=true; btn.textContent='Setting up…'; }
+  try{
+    var cars=[
+      {id:'car1', name:'Ferrari', plate:'1416 I'},
+      {id:'car2', name:'RR Cullinan', plate:'1416 Q'},
+      {id:'car3', name:'RR Phantom', plate:'1416 U'},
+      {id:'car4', name:'G-Wagon', plate:'1416'},
+      {id:'car5', name:'Lamborghini', plate:'14166 V'},
+      {id:'car6', name:'Cadillac', plate:'14161 H'},
+      {id:'car7', name:'Nissan Patrol', plate:'14166 E'},
+      {id:'car8', name:'GMC', plate:'89636 S'}
+    ];
+    for(var i=0;i<cars.length;i++){
+      await db.collection('cars').doc(cars[i].id).set({name:cars[i].name, plate:cars[i].plate}, {merge:true});
+    }
+    var drivers=[['syed','Syed'],['shaafi','Shaafi'],['ali','Ali'],['mustafa','Mustafa'],['saneer','Saneer']];
+    for(i=0;i<drivers.length;i++){
+      await db.collection('drivers').doc(drivers[i][0]).set({name:drivers[i][1], pin:'1234', active:true, createdAt:nowIso()}, {merge:true});
+    }
+    var bosses=[['farooq','Farooq'],['sabiha','Sabiha'],['imtiaz','Imtiaz'],['shoaib','Shoaib']];
+    for(i=0;i<bosses.length;i++){
+      await db.collection('bosses').doc(bosses[i][0]).set({name:bosses[i][1], active:true, createdAt:nowIso()}, {merge:true});
+    }
+    var hrs=[['talat','Talat'],['pratheeksha','Pratheeksha']];
+    for(i=0;i<hrs.length;i++){
+      await db.collection('hrs').doc(hrs[i][0]).set({name:hrs[i][1], active:true, createdAt:nowIso()}, {merge:true});
+    }
+    var accounts=[['nauman','Nauman'],['rayan','Rayan']];
+    for(i=0;i<accounts.length;i++){
+      await db.collection('accounts').doc(accounts[i][0]).set({name:accounts[i][1], active:true, createdAt:nowIso()}, {merge:true});
+    }
+    alert('Done! Cars, drivers, bosses, HR and accounts are all set up.');
+  }catch(e){ console.error(e); alert('Something went wrong, please try again.'); }
+  if(btn){ btn.disabled=false; btn.textContent='Run quick setup'; }
+  render();
+};
+act.addDriver=async function(ev){
+  ev.preventDefault();
+  var name=$('newDriverName').value.trim();
+  var pin=$('newDriverPin').value.trim();
+  if(!name||!/^\d{4}$/.test(pin)){ alert('Enter a name and a 4-digit PIN.'); return false; }
+  await db.collection('drivers').add({name:name, pin:pin, active:true, createdAt:nowIso()});
+  $('newDriverName').value=''; $('newDriverPin').value='';
+  render();
+  return false;
+};
+act.toggleDriver=async function(id){
+  var d=state.drivers[id];
+  await db.collection('drivers').doc(id).update({active: !(d.active!==false)});
+};
+act.resetPin=async function(id){
+  var p=prompt('New 4-digit PIN:');
+  if(!p) return;
+  if(!/^\d{4}$/.test(p)){ alert('PIN must be 4 digits.'); return; }
+  await db.collection('drivers').doc(id).update({pin:p});
+  alert('PIN updated.');
+};
+act.addBoss=async function(ev){
+  ev.preventDefault();
+  var name=$('newBossName').value.trim();
+  if(!name) return false;
+  await db.collection('bosses').add({name:name, active:true, createdAt:nowIso()});
+  $('newBossName').value='';
+  render();
+  return false;
+};
+act.toggleBoss=async function(id){
+  var b=state.bosses[id];
+  await db.collection('bosses').doc(id).update({active: !(b.active!==false)});
+};
+act.addHr=async function(ev){
+  ev.preventDefault();
+  var name=$('newHrName').value.trim();
+  if(!name) return false;
+  await db.collection('hrs').add({name:name, active:true, createdAt:nowIso()});
+  $('newHrName').value='';
+  render();
+  return false;
+};
+act.toggleHr=async function(id){
+  var b=state.hrs[id];
+  await db.collection('hrs').doc(id).update({active: !(b.active!==false)});
+};
+act.addAccount=async function(ev){
+  ev.preventDefault();
+  var name=$('newAccountName').value.trim();
+  if(!name) return false;
+  await db.collection('accounts').add({name:name, active:true, createdAt:nowIso()});
+  $('newAccountName').value='';
+  render();
+  return false;
+};
+act.toggleAccount=async function(id){
+  var b=state.accounts[id];
+  await db.collection('accounts').doc(id).update({active: !(b.active!==false)});
+};
+
+// ---- checkout / checkin ----
+act.selectCheckoutCar=function(id){ pendingCheckoutCar=id; checkoutForm={km:String(state.cars[id].currentKm||0), tyres:true, lights:true, fuel:'Full', service:false, damage:false, damageNote:''}; render(); };
+act.cancelCheckout=function(){ pendingCheckoutCar=null; render(); };
+act.updateCheckoutField=function(field,val){ checkoutForm[field]=val; render(); };
+act.submitCheckout=async function(ev){
+  ev.preventDefault();
+  var car=state.cars[pendingCheckoutCar];
+  var km=parseFloat($('co_km').value);
+  if(isNaN(km)){ alert('Please enter a valid KM.'); return false; }
+  if(car.currentKm && km<car.currentKm){ if(!confirm('This KM is less than the last recorded reading for this car ('+car.currentKm+'). Continue anyway?')) return false; }
+  var tyres=$('co_tyres').checked, lights=$('co_lights').checked, fuel=$('co_fuel').value, service=$('co_service').checked, snote=$('co_snote')?$('co_snote').value:'', damage=$('co_damage').checked, dnote=$('co_dnote')?$('co_dnote').value:'';
+  await db.collection('sessions').add({
+    carId:car.id, carName:car.name, driverId:me.id, driverName:me.name, date:todayStr(),
+    outTime:nowIso(), outKm:km, outChecklist:{tyres:tyres,lights:lights,fuel:fuel,service:service,serviceNote:snote,damage:damage,damageNote:dnote},
+    inTime:null, inKm:null, inChecklist:null, status:'open', distance:null
+  });
+  await db.collection('cars').doc(car.id).update({status:'out', currentDriverId:me.id, currentDriverName:me.name, currentKm:km});
+  pendingCheckoutCar=null;
+  render();
+  return false;
+};
+
+function myOpenSession(){
+  return listOf(state.sessions).find(function(s){ return s.driverId===me.id && s.status==='open'; });
+}
+act.updateCheckinField=function(field,val){ checkinForm[field]=val; render(); };
+act.submitCheckin=async function(ev){
+  ev.preventDefault();
+  var s=myOpenSession();
+  if(!s) return false;
+  var km=parseFloat($('ci_km').value);
+  if(isNaN(km) || km<s.outKm){ alert('End KM cannot be less than start KM ('+s.outKm+').'); return false; }
+  var tyres=$('ci_tyres').checked, lights=$('ci_lights').checked, service=$('ci_service').checked, snote=$('ci_snote')?$('ci_snote').value:'', damage=$('ci_damage').checked, dnote=$('ci_dnote')?$('ci_dnote').value:'';
+  await db.collection('sessions').doc(s.id).update({
+    status:'closed', inTime:nowIso(), inKm:km, inChecklist:{tyres:tyres,lights:lights,service:service,serviceNote:snote,damage:damage,damageNote:dnote},
+    distance: km-s.outKm
+  });
+  await db.collection('cars').doc(s.carId).update({status:'in', currentDriverId:null, currentDriverName:null, currentKm:km, lastCleanedDate:todayStr()});
+  checkinForm={km:'',tyres:true,lights:true,service:false,damage:false,damageNote:''};
+  render();
+  return false;
+};
+
+// ---- expenses / fines ----
+act.submitExpense=async function(ev){
+  ev.preventDefault();
+  var carId=$('exp_car').value, type=$('exp_type').value, amount=parseFloat($('exp_amount').value), date=$('exp_date').value, note=$('exp_note').value.trim();
+  if(!carId||isNaN(amount)){ alert('Car and amount are required.'); return false; }
+  var car=state.cars[carId];
+  await db.collection('expenses').add({carId:carId, carName:car?car.name:'', driverId:me.id, driverName:me.name, type:type, amount:amount, date:date||todayStr(), note:note});
+  ev.target.reset && ev.target.reset();
+  render();
+  return false;
+};
+act.submitFine=async function(ev){
+  ev.preventDefault();
+  var carId=$('fine_car').value, num=$('fine_num').value.trim(), amount=parseFloat($('fine_amount').value), date=$('fine_date').value, note=$('fine_note').value.trim();
+  if(!carId||isNaN(amount)){ alert('Car and amount are required.'); return false; }
+  var car=state.cars[carId];
+  await db.collection('fines').add({carId:carId, carName:car?car.name:'', driverId:me.id, driverName:me.name, fineNumber:num, amount:amount, date:date||todayStr(), note:note, status:'unpaid'});
+  ev.target.reset && ev.target.reset();
+  render();
+  return false;
+};
+act.toggleFinePaid=async function(id){
+  var f=state.fines[id];
+  await db.collection('fines').doc(id).update({status: f.status==='paid'?'unpaid':'paid'});
+};
+
+// ---- tasks ----
+act.createTask=async function(ev){
+  ev.preventDefault();
+  var title=$('task_title').value.trim(), details=$('task_details').value.trim(), due=$('task_due').value, assignTo=$('task_assign').value;
+  if(!title) return false;
+  var targets = assignTo==='__all__' ? activeDrivers() : [state.drivers[assignTo]].filter(Boolean);
+  if(targets.length===0){ alert('Select a driver.'); return false; }
+  for(var i=0;i<targets.length;i++){
+    await db.collection('tasks').add({
+      title:title, details:details, dueDate:due, assignedToId:targets[i].id, assignedToName:targets[i].name,
+      assignedById:me.id, assignedByName:me.name, createdAt:nowIso(), status:'pending', doneAt:null, approvedAt:null, approvalNote:''
+    });
+  }
+  $('task_title').value=''; $('task_details').value=''; $('task_due').value='';
+  render();
+  return false;
+};
+act.markTaskDone=async function(id){
+  await db.collection('tasks').doc(id).update({status:'done', doneAt:nowIso()});
+};
+act.approveTask=async function(id){
+  await db.collection('tasks').doc(id).update({status:'approved', approvedAt:nowIso(), approvalNote:''});
+};
+act.rejectTask=async function(id){
+  var note=prompt('Enter the reason for rejecting:')||'';
+  await db.collection('tasks').doc(id).update({status:'rejected', approvedAt:nowIso(), approvalNote:note});
+};
+
+// ---- chat ----
+act.sendChat=async function(ev){
+  ev.preventDefault();
+  var input=$('chatInput');
+  var text=input.value.trim();
+  if(!text) return false;
+  input.value='';
+  await db.collection('chat').add({senderId:me.id, senderName:me.name, role:me.role, text:text, createdAt:nowIso()});
+  setTimeout(scrollChatBottom,80);
+  return false;
+};
+function scrollChatBottom(){ var el=$('chatLog'); if(el) el.scrollTop=el.scrollHeight; }
+
+// ---------- render ----------
+function render(){
+  var ae=document.activeElement;
+  var focusId=null, focusVal=null, selS=null, selE=null, scrollY=window.scrollY;
+  if(ae && ae.id && ae.tagName!=='BODY'){
+    focusId=ae.id; focusVal=ae.value;
+    if(typeof ae.selectionStart==='number'){ selS=ae.selectionStart; selE=ae.selectionEnd; }
+  }
+  renderInner();
+  if(focusId){
+    var el2=$(focusId);
+    if(el2 && 'value' in el2){
+      el2.value=focusVal;
+      try{ el2.focus(); if(selS!=null) el2.setSelectionRange(selS,selE); }catch(e){}
+    }
+  }
+  window.scrollTo(0, scrollY);
+}
+function renderInner(){
+  var el=$('app');
+  if(!state.dbAvailable && state.dbAvailable!==null && !me){
+    el.innerHTML=renderNoDb(); return;
+  }
+  if(!me){ el.innerHTML=renderLogin(); bindLoginPin(); return; }
+  el.innerHTML = renderHeader() + renderNotesBanner() + '<div class="main">' + renderTab() + '</div>' + renderTabbar();
+}
+
+function renderNoDb(){
+  return '<div class="loginwrap"><h1>🚗 Zoya Developments</h1>' +
+    '<p>Could not connect to the database.</p>' +
+    '<div class="roletile"><p style="margin:0">Please check your internet connection and reload the page. If this keeps happening, contact whoever set up the app.</p></div></div>';
+}
+
+function renderLogin(){
+  var h='<div class="loginwrap"><h1>🚗 Zoya Developments</h1><p>Fleet &amp; Driver Management</p>';
+  if(loginStage==='root'){
+    h+='<div class="roletile"><h3>I am the Boss</h3><p class="muted" style="margin:0 0 10px">Select your name to log in directly</p><button class="btn secondary" onclick="act.goBossPick()">Boss Login</button></div>';
+    h+='<div class="roletile"><h3>I am a Driver</h3><p class="muted" style="margin:0 0 10px">Select your name to log in</p><button class="btn" onclick="act.goDriverPick()">Driver Login</button></div>';
+    h+='<div class="roletile"><h3>HR</h3><p class="muted" style="margin:0 0 10px">Select your name to log in directly</p><button class="btn secondary" onclick="act.goHrPick()">HR Login</button></div>';
+    h+='<div class="roletile"><h3>Accounts</h3><p class="muted" style="margin:0 0 10px">Select your name to log in directly</p><button class="btn secondary" onclick="act.goAccountPick()">Accounts Login</button></div>';
+  } else if(loginStage==='driverPick'){
+    var drivers=activeDrivers();
+    h+='<div class="roletile"><h3>Choose your name</h3>';
+    if(drivers.length===0) h+='<p class="muted">No drivers added yet. Ask the boss to add you.</p>';
+    drivers.forEach(function(d){ h+='<button class="namebtn" onclick="act.pickDriver(\''+d.id+'\')">'+esc(d.name)+'</button>'; });
+    h+='<button class="linklike" onclick="act.goRoot()">‹ Back</button></div>';
+  } else if(loginStage==='driverPin'){
+    h+='<div class="roletile"><h3>'+esc(pickedDriver.name)+'</h3><p class="muted" style="margin:0">Enter your 4-digit PIN</p>';
+    h+='<div class="pindots">'+[0,1,2,3].map(function(i){ return '<span class="'+(i<pinBuf.length?'filled':'')+'"></span>'; }).join('')+'</div>';
+    h+='<div class="pinpad" id="pinpad"></div>';
+    h+='<button class="linklike" onclick="act.goDriverPick()">‹ Back</button></div>';
+  } else if(loginStage==='bossPick'){
+    var bosses=activeBosses();
+    h+='<div class="roletile"><h3>Choose your name</h3>';
+    bosses.forEach(function(b){ h+='<button class="namebtn" onclick="act.pickBoss(\''+b.id+'\')">'+esc(b.name)+'</button>'; });
+    if(bosses.length===0) h+='<p class="muted">No boss registered yet. Add your name below.</p>';
+    h+='<button class="linklike" onclick="act.showBossNew()">+ Add a new boss</button><br><button class="linklike" onclick="act.goRoot()">‹ Back</button></div>';
+  } else if(loginStage==='bossNew'){
+    h+='<div class="roletile"><h3>Enter your name</h3><form onsubmit="return act.createBoss(event)">'+
+      '<div class="field"><input id="bossNameInput" placeholder="Full name" autofocus></div>'+
+      '<button class="btn" type="submit">Login</button></form>'+
+      '<button class="linklike" onclick="act.goBossPick()">‹ Back</button></div>';
+  } else if(loginStage==='hrPick'){
+    var hrs=activeHrs();
+    h+='<div class="roletile"><h3>Choose your name</h3>';
+    hrs.forEach(function(b){ h+='<button class="namebtn" onclick="act.pickHr(\''+b.id+'\')">'+esc(b.name)+'</button>'; });
+    if(hrs.length===0) h+='<p class="muted">No HR registered yet. Add your name below.</p>';
+    h+='<button class="linklike" onclick="act.showHrNew()">+ Add a new HR login</button><br><button class="linklike" onclick="act.goRoot()">‹ Back</button></div>';
+  } else if(loginStage==='hrNew'){
+    h+='<div class="roletile"><h3>Enter your name</h3><form onsubmit="return act.createHr(event)">'+
+      '<div class="field"><input id="hrNameInput" placeholder="Full name" autofocus></div>'+
+      '<button class="btn" type="submit">Login</button></form>'+
+      '<button class="linklike" onclick="act.goHrPick()">‹ Back</button></div>';
+  } else if(loginStage==='accountPick'){
+    var accs=activeAccounts();
+    h+='<div class="roletile"><h3>Choose your name</h3>';
+    accs.forEach(function(b){ h+='<button class="namebtn" onclick="act.pickAccount(\''+b.id+'\')">'+esc(b.name)+'</button>'; });
+    if(accs.length===0) h+='<p class="muted">No Accounts login registered yet. Add your name below.</p>';
+    h+='<button class="linklike" onclick="act.showAccountNew()">+ Add a new Accounts login</button><br><button class="linklike" onclick="act.goRoot()">‹ Back</button></div>';
+  } else if(loginStage==='accountNew'){
+    h+='<div class="roletile"><h3>Enter your name</h3><form onsubmit="return act.createAccount(event)">'+
+      '<div class="field"><input id="accountNameInput" placeholder="Full name" autofocus></div>'+
+      '<button class="btn" type="submit">Login</button></form>'+
+      '<button class="linklike" onclick="act.goAccountPick()">‹ Back</button></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function bindLoginPin(){
+  if(loginStage!=='driverPin') return;
+  var pad=$('pinpad'); if(!pad) return;
+  var keys=['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  pad.innerHTML=keys.map(function(k){
+    if(k==='') return '<span></span>';
+    if(k==='⌫') return '<button onclick="act.pinBack()">⌫</button>';
+    return '<button onclick="act.pinDigit(\''+k+'\')">'+k+'</button>';
+  }).join('');
+}
+
+function renderHeader(){
+  var roleLabel={boss:'Boss', driver:'Driver', hr:'HR', account:'Accounts'}[me.role]||me.role;
+  return '<div class="header"><div class="brand"><span class="name">Zoya Developments</span><span class="tag">Fleet &amp; Driver Management</span></div>'+
+    '<div class="who"><span class="badge">'+roleLabel+'</span><span class="uname">'+esc(me.name)+'</span><button class="iconbtn" onclick="act.logout()">Logout</button></div></div>';
+}
+
+function unseenNotesFor(){
+  return listOf(state.notes).filter(function(n){ return (n.acknowledgedBy||[]).indexOf(me.id)===-1; })
+    .sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+}
+function renderNotesBanner(){
+  if(me.role!=='driver') return '';
+  var unseen=unseenNotesFor().filter(function(n){return n.urgent;});
+  if(unseen.length===0) return '';
+  var n=unseen[0];
+  return '<div style="padding:10px 14px 0"><div class="card notecard urgent" style="margin-bottom:0"><div class="between"><strong style="font-size:13px">Important Note</strong><span class="muted">'+fmtTime(n.createdAt)+'</span></div><p style="margin:6px 0">'+esc(n.text)+'</p><button class="btn small" onclick="act.ackNote(\''+n.id+'\')">OK, got it</button></div></div>';
+}
+
+function renderTab(){
+  if(me.role==='driver'){
+    if(tab==='home') return renderDriverHome();
+    if(tab==='car') return renderDriverCar();
+    if(tab==='money') return renderDriverMoney();
+    if(tab==='tasks') return renderDriverTasks();
+    if(tab==='chat') return renderChat();
+  } else if(me.role==='boss'){
+    if(tab==='home') return renderBossOverview();
+    if(tab==='cars') return renderBossCars();
+    if(tab==='team') return renderTeam('full');
+    if(tab==='tasks') return renderBossTasks();
+    if(tab==='money') return renderBossMoney();
+    if(tab==='chat') return renderChat();
+  } else if(me.role==='hr'){
+    if(tab==='home') return renderBossOverview();
+    if(tab==='team') return renderTeam('drivers');
+    if(tab==='tasks') return renderBossTasks();
+    if(tab==='chat') return renderChat();
+  } else if(me.role==='account'){
+    if(tab==='home') return renderBossOverview();
+    if(tab==='cars') return renderBossCars();
+    if(tab==='money') return renderBossMoney();
+    if(tab==='chat') return renderChat();
+  }
+  return '';
+}
+function renderTabbar(){
+  var tabs;
+  if(me.role==='driver') tabs=[['home','Home'],['car','My Car'],['money','Money'],['tasks','Tasks'],['chat','Chat']];
+  else if(me.role==='boss') tabs=[['home','Overview'],['cars','Cars'],['team','Team'],['tasks','Tasks'],['money','Money'],['chat','Chat']];
+  else if(me.role==='hr') tabs=[['home','Overview'],['team','Team'],['tasks','Tasks'],['chat','Chat']];
+  else tabs=[['home','Overview'],['cars','Cars'],['money','Money'],['chat','Chat']];
+  return '<div class="tabbar">'+tabs.map(function(t){ return '<button class="tabbtn '+(tab===t[0]?'active':'')+'" onclick="act.setTab(\''+t[0]+'\')">'+t[1]+'</button>'; }).join('')+'</div>';
+}
+
+// ---- Driver: Home ----
+function renderDriverHome(){
+  var h='';
+  var myDuty=myOpenDuty();
+  h+='<div class="card"><h3>Duty</h3>';
+  if(myDuty){
+    h+='<p class="muted">On duty since <strong style="color:var(--text)">'+fmtTime(myDuty.inTime)+'</strong>.</p>';
+    h+='<button class="btn danger" onclick="act.endDuty()">End Duty (Logout)</button>';
+  } else {
+    h+='<p class="muted">Duty timing: '+DUTY_START_LABEL+' – '+DUTY_END_LABEL+'</p>';
+    h+='<button class="btn" onclick="act.startDuty()">Start Duty (Login)</button>';
+  }
+  h+='</div>';
+  var todayDutyHrs=driverDayDutyHours(me.id, todayStr());
+  var todayDutyOT=Math.max(0, todayDutyHrs-DAILY_HOUR_LIMIT);
+  if(todayDutyHrs>0){
+    h+='<div class="card between"><span>Duty hours today</span><span>'+todayDutyHrs.toFixed(1)+'h'+(todayDutyOT>0?(' <span class="pill danger">+'+todayDutyOT.toFixed(1)+'h overtime</span>'):'')+'</span></div>';
+  }
+  h+=renderOnDutyCard();
+
+  var mySession=myOpenSession();
+  h+='<div class="card"><h3>Today\'s status</h3>';
+  if(mySession){
+    h+='<p class="muted">You currently have <strong style="color:var(--text)">'+esc(mySession.carName)+'</strong> checked out, since '+fmtTime(mySession.outTime)+'.</p>';
+    h+='<button class="btn" onclick="act.setTab(\'car\')">End my day (Check-in)</button>';
+  } else {
+    h+='<p class="muted">No car is currently checked out under your name.</p><button class="btn" onclick="act.setTab(\'car\')">Start my day (Check-out)</button>';
+  }
+  h+='</div>';
+
+  var todayHrs=driverDayHours(me.id, todayStr());
+  var todayOT=Math.max(0, todayHrs-DAILY_HOUR_LIMIT);
+  if(todayHrs>0){
+    h+='<div class="card between"><span>Hours worked today</span><span>'+todayHrs.toFixed(1)+'h'+(todayOT>0?(' <span class="pill danger">+'+todayOT.toFixed(1)+'h overtime</span>'):'')+'</span></div>';
+  }
+
+  var pendingApprovals=listOf(state.tasks).filter(function(t){return t.assignedToId===me.id && (t.status==='pending'||t.status==='rejected');});
+  if(pendingApprovals.length){
+    h+='<div class="card"><h3>My pending tasks ('+pendingApprovals.length+')</h3>';
+    pendingApprovals.slice(0,3).forEach(function(t){ h+='<div class="checkline"><span>'+esc(t.title)+'</span></div>'; });
+    h+='<button class="linklike" onclick="act.setTab(\'tasks\')">View all →</button></div>';
+  }
+
+  var allNotes=listOf(state.notes).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
+  h+='<div class="card"><h3>Important Notes</h3>';
+  if(allNotes.length===0) h+='<p class="muted">No notes yet.</p>';
+  allNotes.slice(0,6).forEach(function(n){
+    var seen=(n.acknowledgedBy||[]).indexOf(me.id)>-1;
+    h+='<div class="card notecard '+(n.urgent?'urgent':'')+'" style="margin-bottom:8px">'+
+      '<div class="between"><span class="muted">'+esc(n.createdByName)+' · '+fmtTime(n.createdAt)+'</span>'+(seen?'<span class="pill ok">Seen</span>':'')+'</div>'+
+      '<p style="margin:6px 0">'+esc(n.text)+'</p>'+
+      (seen?'':'<button class="btn small" onclick="act.ackNote(\''+n.id+'\')">OK, got it</button>')+
+      '</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+// ---- Driver: Car (checkout/checkin) ----
+function renderDriverCar(){
+  var mySession=myOpenSession();
+  var h='';
+  if(mySession){
+    h+=renderCheckinForm(mySession);
+  } else if(pendingCheckoutCar){
+    h+=renderCheckoutForm();
+  } else {
+    var avail=carsSorted().filter(function(c){return c.status!=='out';});
+    h+='<div class="sectiontitle">Select a car — start your day</div>';
+    if(avail.length===0) h+='<div class="empty">No car is available in the garage right now.</div>';
+    avail.forEach(function(c){
+      var ei=expiryInfo(c.insExpiry);
+      h+='<div class="card carcard"><div class="top"><div><strong>'+esc(c.name)+'</strong>'+(c.plate?'<div class="muted">'+esc(c.plate)+'</div>':'')+'</div>'+
+        '<span class="pill '+ei.cls+'">Ins: '+ei.label+'</span></div>'+
+        '<div class="muted">Last KM: '+ (c.currentKm||0) +'</div>'+
+        '<button class="btn secondary" style="margin-top:8px" onclick="act.selectCheckoutCar(\''+c.id+'\')">Take this car</button></div>';
+    });
+  }
+  h+='<div class="sectiontitle">My history</div>';
+  var mine=listOf(state.sessions).filter(function(s){return s.driverId===me.id;}).sort(function(a,b){return new Date(b.outTime)-new Date(a.outTime);});
+  if(mine.length===0) h+='<div class="empty">No records yet.</div>';
+  mine.slice(0,10).forEach(function(s){ h+=renderSessionCard(s); });
+  return h;
+}
+function renderCheckoutForm(){
+  var car=state.cars[pendingCheckoutCar];
+  return '<div class="card"><h3>Check-out: '+esc(car.name)+'</h3><form onsubmit="return act.submitCheckout(event)">'+
+    '<div class="field"><label>Start KM</label><input id="co_km" type="number" inputmode="numeric" value="'+esc(checkoutForm.km)+'" required></div>'+
+    '<div class="checkline"><input id="co_tyres" type="checkbox" checked><label style="margin:0">Tyres OK</label></div>'+
+    '<div class="checkline"><input id="co_lights" type="checkbox" checked><label style="margin:0">Lights OK</label></div>'+
+    '<div class="field"><label>Fuel level</label><select id="co_fuel"><option>Full</option><option>3/4</option><option>Half</option><option>1/4</option><option>Low</option></select></div>'+
+    '<div class="checkline"><input id="co_service" type="checkbox" onchange="document.getElementById(\'co_snote_wrap\').style.display=this.checked?\'block\':\'none\'"><label style="margin:0">Service needed</label></div>'+
+    '<div id="co_snote_wrap" class="field" style="display:none"><label>Service reason (e.g. oil change, monthly routine)</label><textarea id="co_snote" placeholder="Kyun bhej rahe hain..."></textarea></div>'+
+    '<div class="checkline"><input id="co_damage" type="checkbox" onchange="document.getElementById(\'co_dnote_wrap\').style.display=this.checked?\'block\':\'none\'"><label style="margin:0">Any damage/scratch</label></div>'+
+    '<div id="co_dnote_wrap" class="field" style="display:none"><label>Damage note</label><textarea id="co_dnote"></textarea></div>'+
+    '<div class="row"><button class="btn secondary" type="button" onclick="act.cancelCheckout()">Cancel</button><button class="btn" type="submit">Start day</button></div>'+
+    '</form></div>';
+}
+function renderCheckinForm(s){
+  return '<div class="card"><h3>Check-in: '+esc(s.carName)+'</h3><p class="muted">Out KM: '+s.outKm+' · Out time: '+fmtTime(s.outTime)+'</p>'+
+    '<form onsubmit="return act.submitCheckin(event)">'+
+    '<div class="field"><label>End KM</label><input id="ci_km" type="number" inputmode="numeric" required></div>'+
+    '<div class="checkline"><input id="ci_tyres" type="checkbox" checked><label style="margin:0">Tyres OK</label></div>'+
+    '<div class="checkline"><input id="ci_lights" type="checkbox" checked><label style="margin:0">Lights OK</label></div>'+
+    '<div class="checkline"><input id="ci_service" type="checkbox" onchange="document.getElementById(\'ci_snote_wrap\').style.display=this.checked?\'block\':\'none\'"><label style="margin:0">Service needed</label></div>'+
+    '<div id="ci_snote_wrap" class="field" style="display:none"><label>Service reason (e.g. oil change, monthly routine)</label><textarea id="ci_snote" placeholder="Kyun bhej rahe hain..."></textarea></div>'+
+    '<div class="checkline"><input id="ci_damage" type="checkbox" onchange="document.getElementById(\'ci_dnote_wrap\').style.display=this.checked?\'block\':\'none\'"><label style="margin:0">New damage/scratch occurred</label></div>'+
+    '<div id="ci_dnote_wrap" class="field" style="display:none"><label>Damage note</label><textarea id="ci_dnote"></textarea></div>'+
+    '<button class="btn" type="submit">End day</button>'+
+    '</form></div>';
+}
+function renderSessionCard(s){
+  var h='<div class="card"><div class="between"><strong>'+esc(s.carName)+'</strong><span class="pill '+(s.status==='open'?'warn':'ok')+'">'+(s.status==='open'?'In progress':'Complete')+'</span></div>'+
+    '<div class="muted">Driver: '+esc(s.driverName)+'</div>'+
+    '<div class="muted">'+fmtDateOnly(s.date)+' · Out '+fmtTime(s.outTime)+(s.inTime?(' · In '+fmtTime(s.inTime)):'')+'</div>'+
+    '<div class="muted">KM: '+s.outKm+(s.inKm!=null?(' → '+s.inKm+' ('+s.distance+' km)'):'')+'</div>';
+  if(s.outChecklist && s.outChecklist.service) h+='<div class="pill warn" style="margin-top:6px">Service needed (morning): '+esc(s.outChecklist.serviceNote||'')+'</div>';
+  if(s.inChecklist && s.inChecklist.service) h+='<div class="pill warn" style="margin-top:6px">Service needed (evening): '+esc(s.inChecklist.serviceNote||'')+'</div>';
+  if(s.outChecklist && s.outChecklist.damage) h+='<div class="pill danger" style="margin-top:6px">Morning damage note: '+esc(s.outChecklist.damageNote||'')+'</div>';
+  if(s.inChecklist && s.inChecklist.damage) h+='<div class="pill danger" style="margin-top:6px">Evening damage note: '+esc(s.inChecklist.damageNote||'')+'</div>';
+  h+='</div>';
+  return h;
+}
+
+// ---- Driver: Money ----
+function renderDriverMoney(){
+  var carOptions=carsSorted().map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+  var h='<div class="card"><h3>Add expense</h3><form onsubmit="return act.submitExpense(event)">'+
+    '<div class="field"><label>Car</label><select id="exp_car">'+carOptions+'</select></div>'+
+    '<div class="field"><label>Type</label><select id="exp_type"><option>Fuel</option><option>Washing</option><option>Service</option><option>Passing</option><option>Insurance</option><option>Salik</option><option>Other</option></select></div>'+
+    '<div class="grid2"><div class="field"><label>Amount</label><input id="exp_amount" type="number" step="0.01" required></div><div class="field"><label>Date</label><input id="exp_date" type="date" value="'+todayStr()+'"></div></div>'+
+    '<div class="field"><label>Note</label><input id="exp_note" placeholder="Optional"></div>'+
+    '<button class="btn" type="submit">Save expense</button></form></div>';
+  h+='<div class="card"><h3>Add fine / challan</h3><form onsubmit="return act.submitFine(event)">'+
+    '<div class="field"><label>Car</label><select id="fine_car">'+carOptions+'</select></div>'+
+    '<div class="grid2"><div class="field"><label>Fine number / plate</label><input id="fine_num"></div><div class="field"><label>Amount</label><input id="fine_amount" type="number" step="0.01" required></div></div>'+
+    '<div class="grid2"><div class="field"><label>Date</label><input id="fine_date" type="date" value="'+todayStr()+'"></div><div class="field"><label>Note</label><input id="fine_note"></div></div>'+
+    '<button class="btn secondary" type="submit">Save fine</button></form></div>';
+  var mineExp=listOf(state.expenses).filter(function(e){return e.driverId===me.id;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  h+='<div class="sectiontitle">My recent entries</div>';
+  if(mineExp.length===0) h+='<div class="empty">No entries yet.</div>';
+  mineExp.slice(0,8).forEach(function(e){ h+='<div class="card"><div class="between"><strong>'+esc(e.type)+' · '+esc(e.carName)+'</strong><span>'+e.amount+'</span></div><div class="muted">'+fmtDateOnly(e.date)+(e.note?(' · '+esc(e.note)):'')+'</div></div>'; });
+  return h;
+}
+
+// ---- Driver: Tasks ----
+function renderDriverTasks(){
+  var mine=listOf(state.tasks).filter(function(t){return t.assignedToId===me.id;}).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
+  var h='<div class="sectiontitle">My tasks</div>';
+  if(mine.length===0) h+='<div class="empty">No tasks assigned yet.</div>';
+  mine.forEach(function(t){
+    h+='<div class="card"><div class="between"><strong>'+esc(t.title)+'</strong><span class="pill '+statusPillClass(t.status)+'">'+statusLabel(t.status)+'</span></div>';
+    if(t.details) h+='<p class="muted" style="margin:6px 0">'+esc(t.details)+'</p>';
+    h+='<div class="muted">Boss: '+esc(t.assignedByName)+(t.dueDate?(' · Due '+fmtDateOnly(t.dueDate)):'')+'</div>';
+    if(t.status==='rejected' && t.approvalNote) h+='<div class="pill danger" style="margin-top:6px">Reason: '+esc(t.approvalNote)+'</div>';
+    if(t.status==='pending'||t.status==='rejected') h+='<button class="btn secondary" style="margin-top:8px" onclick="act.markTaskDone(\''+t.id+'\')">Mark done, send to boss</button>';
+    h+='</div>';
+  });
+  return h;
+}
+function statusLabel(s){ return {pending:'Pending', done:'Awaiting boss approval', approved:'Approved', rejected:'Rejected'}[s]||s; }
+function statusPillClass(s){ return {pending:'neutral', done:'warn', approved:'ok', rejected:'danger'}[s]||'neutral'; }
+
+// ---- Boss: Overview ----
+function renderOnDutyCard(){
+  var onDuty=listOf(state.duty).filter(function(s){return s.status==='open';});
+  var h='<div class="card"><h3>On duty now ('+onDuty.length+')</h3>';
+  if(onDuty.length===0) h+='<p class="muted">No one is on duty right now.</p>';
+  else onDuty.sort(function(a,b){return new Date(a.inTime)-new Date(b.inTime);}).forEach(function(s){
+    h+='<div class="between" style="padding:5px 0"><span>'+esc(s.driverName)+'</span><span class="muted">since '+fmtTime(s.inTime)+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+function renderBossOverview(){
+  var h='';
+  h+=renderOnDutyCard();
+  var alerts=[];
+  carsSorted().forEach(function(c){
+    ['regExpiry','insExpiry','passingExpiry'].forEach(function(f){
+      var ei=expiryInfo(c[f]);
+      if(ei.cls==='danger'||ei.cls==='warn') alerts.push({car:c.name, label:{regExpiry:'Registration',insExpiry:'Insurance',passingExpiry:'Passing'}[f], info:ei});
+    });
+    if(c.status==='out'){
+      var s=listOf(state.sessions).find(function(x){return x.carId===c.id && x.status==='open';});
+      if(s && hoursSince(s.outTime)>12) alerts.push({car:c.name, label:'Time out', info:{cls:'danger', label:Math.round(hoursSince(s.outTime))+'h out'}});
+    }
+  });
+  if(alerts.length){
+    h+='<div class="card"><h3>Alerts</h3>';
+    alerts.forEach(function(a){ h+='<div class="between" style="padding:5px 0"><span>'+esc(a.car)+' — '+esc(a.label)+'</span><span class="pill '+a.info.cls+'">'+a.info.label+'</span></div>'; });
+    h+='</div>';
+  }
+  var pendingApprovals=listOf(state.tasks).filter(function(t){return t.status==='done';});
+  if(pendingApprovals.length){
+    h+='<div class="card"><h3>Awaiting approval ('+pendingApprovals.length+')</h3>';
+    pendingApprovals.forEach(function(t){
+      h+='<div class="between" style="padding:6px 0"><span>'+esc(t.title)+' — '+esc(t.assignedToName)+'</span><span class="row" style="width:auto"><button class="btn small" onclick="act.approveTask(\''+t.id+'\')">Approve</button><button class="btn small danger" onclick="act.rejectTask(\''+t.id+'\')">Reject</button></span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="sectiontitle">Fleet</div>';
+  carsSorted().forEach(function(c){ h+=renderCarOverviewCard(c); });
+
+  h+='<div class="sectiontitle">Important Notes</div>';
+  h+='<div class="card"><form onsubmit="return act.addNote(event)"><div class="field"><textarea id="noteText" placeholder="Write a note..."></textarea></div>'+
+    '<div class="checkline"><input id="noteUrgent" type="checkbox"><label style="margin:0">Urgent (drivers see it immediately)</label></div>'+
+    '<button class="btn small" type="submit">Add note</button></form></div>';
+  var totalDrivers=activeDrivers().length;
+  listOf(state.notes).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);}).forEach(function(n){
+    var seenCount=(n.acknowledgedBy||[]).length;
+    h+='<div class="card notecard '+(n.urgent?'urgent':'')+'"><div class="between"><span class="muted">'+esc(n.createdByName)+' · '+fmtTime(n.createdAt)+'</span><button class="linklike" onclick="act.deleteNote(\''+n.id+'\')">Delete</button></div>'+
+      '<p style="margin:6px 0">'+esc(n.text)+'</p><span class="pill neutral">Seen: '+seenCount+'/'+totalDrivers+'</span></div>';
+  });
+  return h;
+}
+function renderCarOverviewCard(c){
+  var reg=expiryInfo(c.regExpiry), ins=expiryInfo(c.insExpiry), pass=expiryInfo(c.passingExpiry);
+  var lastSession=listOf(state.sessions).filter(function(s){return s.carId===c.id;}).sort(function(a,b){return new Date(b.outTime)-new Date(a.outTime);})[0];
+  var h='<div class="card carcard"><div class="top"><div><strong>'+esc(c.name)+'</strong>'+(c.plate?'<div class="muted">'+esc(c.plate)+'</div>':'')+'</div>'+
+    '<span class="pill '+(c.status==='out'?'warn':'ok')+'">'+(c.status==='out'?('Out: '+esc(c.currentDriverName||'')):'In garage')+'</span></div>'+
+    '<div class="muted">KM: '+(c.currentKm||0)+'</div>';
+  if(lastSession) h+='<div class="muted">Last trip: '+esc(lastSession.driverName)+' · Out '+lastSession.outKm+(lastSession.inKm!=null?(' → In '+lastSession.inKm+' ('+lastSession.distance+' km)'):' (in progress)')+'</div>';
+  h+='<div class="expirybar"><span class="pill '+reg.cls+'">Reg: '+reg.label+'</span><span class="pill '+ins.cls+'">Ins: '+ins.label+'</span><span class="pill '+pass.cls+'">Passing: '+pass.label+'</span></div></div>';
+  return h;
+}
+
+// ---- Boss: Cars ----
+function renderBossCars(){
+  var h='<div class="sectiontitle">Edit cars</div>';
+  carsSorted().forEach(function(c){
+    h+='<div class="card"><div class="field"><label>Name</label><input id="car_name_'+c.id+'" value="'+esc(c.name)+'"></div>'+
+      '<div class="field"><label>Plate number</label><input id="car_plate_'+c.id+'" value="'+esc(c.plate||'')+'"></div>'+
+      '<div class="field"><label>Model</label><input id="car_model_'+c.id+'" value="'+esc(c.model||'')+'"></div>'+
+      '<div class="grid2"><div class="field"><label>Registration expiry</label><input id="car_reg_'+c.id+'" type="date" value="'+esc(c.regExpiry||'')+'"></div><div class="field"><label>Insurance expiry</label><input id="car_ins_'+c.id+'" type="date" value="'+esc(c.insExpiry||'')+'"></div></div>'+
+      '<div class="field"><label>Passing expiry</label><input id="car_pass_'+c.id+'" type="date" value="'+esc(c.passingExpiry||'')+'"></div>'+
+      '<button class="btn secondary" id="carsave_'+c.id+'" onclick="act.saveCar(\''+c.id+'\')">Save</button></div>';
+  });
+  h+='<div class="sectiontitle">Session history</div>';
+  var all=listOf(state.sessions).sort(function(a,b){return new Date(b.outTime)-new Date(a.outTime);});
+  if(all.length===0) h+='<div class="empty">No sessions yet.</div>';
+  all.slice(0,15).forEach(function(s){ h+=renderSessionCard(s); });
+  return h;
+}
+
+// ---- Boss: Team ----
+function renderHoursReport(){
+  var rep=buildHoursReport();
+  var labels={today:'Today', week:'Last 7 days', month:monthLabel()};
+  var h='<div class="sectiontitle">Driver hours &amp; overtime (after '+DAILY_HOUR_LIMIT+'h/day)</div><div class="card">';
+  h+='<div class="reporttabs">'+['today','week','month'].map(function(p){ return '<button class="'+(hoursPeriod===p?'active':'')+'" onclick="act.setHoursPeriod(\''+p+'\')">'+labels[p]+'</button>'; }).join('')+'</div>';
+  h+='<div class="hoursgrid head"><span>Driver</span><span>Hours</span><span>Overtime</span></div>';
+  var drivers=activeDrivers();
+  if(drivers.length===0) h+='<div class="empty">No drivers yet.</div>';
+  drivers.forEach(function(d){
+    var r=rep[d.id]||{todayHours:0,todayOT:0,weekHours:0,weekOT:0,monthHours:0,monthOT:0};
+    var hrs = hoursPeriod==='today'?r.todayHours : hoursPeriod==='week'?r.weekHours : r.monthHours;
+    var ot = hoursPeriod==='today'?r.todayOT : hoursPeriod==='week'?r.weekOT : r.monthOT;
+    h+='<div class="hoursgrid"><span>'+esc(d.name)+'</span><span>'+hrs.toFixed(1)+'h</span><span>'+(ot>0?('<span class="pill danger">'+ot.toFixed(1)+'h</span>'):'<span class="muted">0h</span>')+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+function renderDutyReport(){
+  var rep=buildDutyReport();
+  var h='<div class="sectiontitle">Duty log (timing '+DUTY_START_LABEL+' – '+DUTY_END_LABEL+')</div>';
+  var drivers=activeDrivers();
+  if(drivers.length===0){ h+='<div class="empty">No drivers yet.</div>'; return h; }
+  drivers.forEach(function(d){
+    var r=rep[d.id]||{status:'off', inTime:null, outTime:null, todayHours:0, todayOT:0};
+    h+='<div class="card"><div class="between"><strong>'+esc(d.name)+'</strong><span class="pill '+(r.status==='on'?'warn':'neutral')+'">'+(r.status==='on'?'On duty':'Off duty')+'</span></div>'+
+      '<div class="muted">In: '+(r.inTime?fmtTime(r.inTime):'—')+' · Out: '+(r.outTime?fmtTime(r.outTime):'—')+'</div>'+
+      '<div class="muted">Today: '+r.todayHours.toFixed(1)+'h'+(r.todayOT>0?(' <span class="pill danger">+'+r.todayOT.toFixed(1)+'h OT</span>'):'')+'</div></div>';
+  });
+  return h;
+}
+function renderTeam(mode){
+  var h='';
+  if(mode==='full'){
+    h+='<div class="card"><h3>Quick setup</h3><p class="muted" style="margin:0 0 10px">Fills in the Zoya Developments cars, drivers, bosses, HR and accounts in one tap. Safe to run more than once.</p><button class="btn secondary" id="quickSetupBtn" onclick="act.runQuickSetup()">Run quick setup</button></div>';
+  }
+  h+='<div class="sectiontitle">Drivers</div><div class="card"><form onsubmit="return act.addDriver(event)">'+
+    '<div class="grid2"><div class="field"><label>Name</label><input id="newDriverName"></div><div class="field"><label>4-digit PIN</label><input id="newDriverPin" inputmode="numeric" maxlength="4"></div></div>'+
+    '<button class="btn small" type="submit">Add driver</button></form></div>';
+  listOf(state.drivers).forEach(function(d){
+    h+='<div class="card between"><div><strong>'+esc(d.name)+'</strong> '+(d.active===false?'<span class="pill neutral">Inactive</span>':'<span class="pill ok">Active</span>')+'</div>'+
+      '<div class="row" style="width:auto"><button class="btn small secondary" onclick="act.resetPin(\''+d.id+'\')">Reset PIN</button><button class="btn small danger" onclick="act.toggleDriver(\''+d.id+'\')">'+(d.active===false?'Activate':'Deactivate')+'</button></div></div>';
+  });
+  if(mode!=='full'){ h+=renderDutyReport(); h+=renderHoursReport(); return h; }
+  h+=renderDutyReport();
+  h+=renderHoursReport();
+  h+='<div class="sectiontitle">Boss / Managers</div><div class="card"><form onsubmit="return act.addBoss(event)">'+
+    '<div class="field"><label>Name</label><input id="newBossName"></div><button class="btn small" type="submit">Add boss</button></form></div>';
+  listOf(state.bosses).forEach(function(b){
+    h+='<div class="card between"><div><strong>'+esc(b.name)+'</strong> '+(b.active===false?'<span class="pill neutral">Inactive</span>':'<span class="pill ok">Active</span>')+'</div>'+
+      '<button class="btn small danger" onclick="act.toggleBoss(\''+b.id+'\')">'+(b.active===false?'Activate':'Deactivate')+'</button></div>';
+  });
+  h+='<div class="sectiontitle">HR</div><div class="card"><form onsubmit="return act.addHr(event)">'+
+    '<div class="field"><label>Name</label><input id="newHrName"></div><button class="btn small" type="submit">Add HR</button></form></div>';
+  listOf(state.hrs).forEach(function(b){
+    h+='<div class="card between"><div><strong>'+esc(b.name)+'</strong> '+(b.active===false?'<span class="pill neutral">Inactive</span>':'<span class="pill ok">Active</span>')+'</div>'+
+      '<button class="btn small danger" onclick="act.toggleHr(\''+b.id+'\')">'+(b.active===false?'Activate':'Deactivate')+'</button></div>';
+  });
+  h+='<div class="sectiontitle">Accounts</div><div class="card"><form onsubmit="return act.addAccount(event)">'+
+    '<div class="field"><label>Name</label><input id="newAccountName"></div><button class="btn small" type="submit">Add Accounts login</button></form></div>';
+  listOf(state.accounts).forEach(function(b){
+    h+='<div class="card between"><div><strong>'+esc(b.name)+'</strong> '+(b.active===false?'<span class="pill neutral">Inactive</span>':'<span class="pill ok">Active</span>')+'</div>'+
+      '<button class="btn small danger" onclick="act.toggleAccount(\''+b.id+'\')">'+(b.active===false?'Activate':'Deactivate')+'</button></div>';
+  });
+  return h;
+}
+
+// ---- Boss: Tasks ----
+function renderBossTasks(){
+  var driverOptions=activeDrivers().map(function(d){return '<option value="'+d.id+'">'+esc(d.name)+'</option>';}).join('');
+  var h='<div class="card"><h3>Assign a new task</h3><form onsubmit="return act.createTask(event)">'+
+    '<div class="field"><label>Title</label><input id="task_title" required></div>'+
+    '<div class="field"><label>Details</label><textarea id="task_details"></textarea></div>'+
+    '<div class="grid2"><div class="field"><label>Assign to</label><select id="task_assign"><option value="__all__">All drivers</option>'+driverOptions+'</select></div><div class="field"><label>Due date</label><input id="task_due" type="date"></div></div>'+
+    '<button class="btn" type="submit">Assign task</button></form></div>';
+  var all=listOf(state.tasks).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
+  h+='<div class="sectiontitle">All tasks</div>';
+  if(all.length===0) h+='<div class="empty">No tasks yet.</div>';
+  all.forEach(function(t){
+    h+='<div class="card"><div class="between"><strong>'+esc(t.title)+'</strong><span class="pill '+statusPillClass(t.status)+'">'+statusLabel(t.status)+'</span></div>'+
+      '<div class="muted">'+esc(t.assignedToName)+(t.dueDate?(' · Due '+fmtDateOnly(t.dueDate)):'')+'</div>';
+    if(t.status==='done') h+='<div class="row" style="margin-top:8px"><button class="btn small" onclick="act.approveTask(\''+t.id+'\')">Approve</button><button class="btn small danger" onclick="act.rejectTask(\''+t.id+'\')">Reject</button></div>';
+    if(t.approvalNote) h+='<div class="pill danger" style="margin-top:6px">'+esc(t.approvalNote)+'</div>';
+    h+='</div>';
+  });
+  return h;
+}
+
+// ---- Boss: Money ----
+function renderExpenseReport(){
+  var rep=buildExpenseReport();
+  var cars=carsSorted();
+  var labels={today:'Today', week:'Last 7 days', month:monthLabel()};
+  var cur=rep[reportPeriod];
+  var h='<div class="sectiontitle">Expense reports</div>';
+  h+='<div class="card">';
+  h+='<div class="reporttabs">'+
+    ['today','week','month'].map(function(p){ return '<button class="'+(reportPeriod===p?'active':'')+'" onclick="act.setReportPeriod(\''+p+'\')">'+labels[p]+'</button>'; }).join('')+
+    '</div>';
+  h+='<div class="between" style="margin-bottom:8px"><span class="muted">Total, '+labels[reportPeriod].toLowerCase()+'</span><strong style="font-size:17px">'+cur.total.toFixed(2)+'</strong></div>';
+  h+='<div class="reportgrid head"><span>Car</span><span>Today</span><span>7 days</span><span>'+monthLabel()+'</span></div>';
+  cars.forEach(function(c){
+    h+='<div class="reportgrid"><span>'+esc(c.name)+'</span><span>'+rep.today.byCar[c.id].toFixed(0)+'</span><span>'+rep.week.byCar[c.id].toFixed(0)+'</span><span>'+rep.month.byCar[c.id].toFixed(0)+'</span></div>';
+  });
+  h+='<div class="reportgrid head" style="border-top:1px solid var(--border);margin-top:2px;padding-top:8px"><span>Total</span><span>'+rep.today.total.toFixed(0)+'</span><span>'+rep.week.total.toFixed(0)+'</span><span>'+rep.month.total.toFixed(0)+'</span></div>';
+  h+='</div>';
+  return h;
+}
+function renderBossMoney(){
+  var h=renderExpenseReport();
+  h+='<div class="sectiontitle">Expenses</div>';
+  var exp=listOf(state.expenses).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var total=exp.reduce(function(s,e){return s+(e.amount||0);},0);
+  h+='<div class="card between"><span>Total</span><strong>'+total.toFixed(2)+'</strong></div>';
+  if(exp.length===0) h+='<div class="empty">No expenses yet.</div>';
+  exp.slice(0,25).forEach(function(e){ h+='<div class="card"><div class="between"><strong>'+esc(e.type)+' · '+esc(e.carName)+'</strong><span>'+e.amount+'</span></div><div class="muted">'+esc(e.driverName)+' · '+fmtDateOnly(e.date)+(e.note?(' · '+esc(e.note)):'')+'</div></div>'; });
+
+  h+='<div class="sectiontitle">Fines / Challans</div>';
+  var fines=listOf(state.fines).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  if(fines.length===0) h+='<div class="empty">No fine records yet.</div>';
+  fines.forEach(function(f){ h+='<div class="card"><div class="between"><strong>'+esc(f.carName)+(f.fineNumber?(' · '+esc(f.fineNumber)):'')+'</strong><span class="pill '+(f.status==='paid'?'ok':'danger')+'">'+f.status+'</span></div>'+
+    '<div class="muted">'+esc(f.driverName)+' · '+fmtDateOnly(f.date)+' · Amount '+f.amount+(f.note?(' · '+esc(f.note)):'')+'</div>'+
+    '<button class="btn small secondary" style="margin-top:6px" onclick="act.toggleFinePaid(\''+f.id+'\')">Mark as '+(f.status==='paid'?'Unpaid':'Paid')+'</button></div>'; });
+  return h;
+}
+
+// ---- Chat ----
+function renderChat(){
+  var members=allTeamMembers();
+  var h='<div class="card" style="margin-bottom:10px"><h3>Team</h3><div class="row" style="flex-wrap:wrap;width:auto;gap:8px">';
+  members.forEach(function(mem){
+    var p=state.presence[mem.role+'_'+mem.id];
+    var online=isOnline(p && p.lastSeen);
+    h+='<span class="pill '+(online?'ok':'neutral')+'">'+(online?'\u25CF ':'\u25CB ')+esc(mem.name)+' ('+roleLabel(mem.role)+')</span>';
+  });
+  h+='</div></div>';
+  h+='<div class="chatwrap"><div class="chatlog" id="chatLog">';
+  var msgs=listOf(state.chat).sort(function(a,b){return new Date(a.createdAt)-new Date(b.createdAt);});
+  if(msgs.length===0) h+='<div class="empty">Boss and drivers can chat here.</div>';
+  msgs.forEach(function(m){
+    var mine=m.senderId===me.id;
+    h+='<div class="bubble '+(mine?'me':'them')+'">'+(mine?'':'<div class="meta">'+esc(m.senderName)+' ('+roleLabel(m.role)+')</div>')+esc(m.text)+'</div>';
+  });
+  h+='</div><form class="chatinput" onsubmit="return act.sendChat(event)"><input id="chatInput" placeholder="Type a message..." autocomplete="off"><button type="submit">Send</button></form></div>';
+  return h;
+}
+
+var _inited=false;
+function _startOnce(){ if(_inited) return; _inited=true; initApp(); }
+document.addEventListener('DOMContentLoaded', _startOnce);
+if(document.readyState==='complete'||document.readyState==='interactive') _startOnce();
+})();
+</script>
+</body>
+</html>
